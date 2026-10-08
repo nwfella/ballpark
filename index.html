@@ -1,0 +1,563 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0d1117">
+<title>BALLPARK — the daily estimation game</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='14' fill='none' stroke='%23ffb454' stroke-width='3'/%3E%3Ccircle cx='16' cy='16' r='4' fill='%23ffb454'/%3E%3C/svg%3E">
+<style>
+:root{
+  --bg:#0d1117; --card:#161d29; --card2:#1d2635; --line:#2a3446;
+  --text:#e9eef5; --dim:#8b97a8; --faint:#5d6879;
+  --accent:#ffb454; --accent2:#ffd479;
+  --green:#3fb950; --yellow:#d6b53a; --orange:#e08a3c; --red:#e5534b;
+  --r:16px;
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{
+  background:radial-gradient(1100px 560px at 50% -12%,#1a2438 0%,var(--bg) 58%) fixed;
+  color:var(--text);
+  font:16px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  min-height:100vh; display:flex; justify-content:center;
+  padding:clamp(12px,4vw,32px); -webkit-text-size-adjust:100%;
+  -webkit-tap-highlight-color:transparent;
+}
+.app{width:100%;max-width:560px;display:flex;flex-direction:column;gap:14px}
+header{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:2px 2px 0}
+.brand{font-weight:800;letter-spacing:.14em;font-size:clamp(15px,4.4vw,18px)}
+.brand .dot{color:var(--accent)}
+.meta{display:flex;gap:8px;align-items:center;font-size:13px;color:var(--dim)}
+.pill{background:var(--card);border:1px solid var(--line);border-radius:999px;padding:4px 10px;font-variant-numeric:tabular-nums;white-space:nowrap}
+.dots{display:flex;gap:6px;justify-content:center;padding:2px 0}
+.dots i{width:26px;height:5px;border-radius:3px;background:var(--line);transition:background .25s}
+.dots i.on{background:var(--accent)}
+.dots i.done{background:var(--faint)}
+.card{background:linear-gradient(180deg,var(--card) 0%,var(--card2) 100%);border:1px solid var(--line);border-radius:var(--r);padding:clamp(16px,4.6vw,22px)}
+.tag{display:inline-block;font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--accent);background:rgba(255,180,84,.1);border:1px solid rgba(255,180,84,.25);border-radius:999px;padding:3px 10px;margin-bottom:12px}
+.q{font-size:clamp(19px,5.4vw,24px);font-weight:700;line-height:1.28;margin:0 0 4px}
+.unit{color:var(--dim);font-size:14px;margin-top:6px}
+.readout{display:flex;align-items:baseline;justify-content:center;gap:8px;margin:22px 0 6px;font-variant-numeric:tabular-nums}
+.readout .v{font-size:clamp(34px,11vw,46px);font-weight:800;letter-spacing:-.02em;color:var(--accent2)}
+.readout .u{font-size:15px;color:var(--dim)}
+input[type=range]{
+  -webkit-appearance:none;appearance:none;width:100%;height:34px;background:transparent;margin:4px 0 2px;cursor:pointer;
+}
+input[type=range]::-webkit-slider-runnable-track{height:8px;border-radius:6px;background:linear-gradient(90deg,rgba(255,180,84,.25),rgba(255,180,84,.5));border:1px solid var(--line)}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:26px;height:26px;margin-top:-10px;border-radius:50%;background:var(--accent);border:3px solid #0d1117;box-shadow:0 2px 8px rgba(0,0,0,.5)}
+input[type=range]::-moz-range-track{height:8px;border-radius:6px;background:rgba(255,180,84,.35)}
+input[type=range]::-moz-range-thumb{width:22px;height:22px;border-radius:50%;background:var(--accent);border:3px solid #0d1117}
+.steppers{display:flex;gap:8px;justify-content:center;color:var(--dim);font-size:13px;margin-bottom:6px}
+.steppers button{background:var(--card);border:1px solid var(--line);color:var(--dim);border-radius:8px;padding:3px 10px;font-size:12px;cursor:pointer}
+.hint{text-align:center;color:var(--faint);font-size:12px;margin-top:2px}
+button.primary{
+  width:100%;border:0;border-radius:12px;padding:15px;font-size:16px;font-weight:800;letter-spacing:.02em;
+  background:linear-gradient(180deg,var(--accent2),var(--accent));color:#20160a;cursor:pointer;transition:transform .08s,filter .15s;
+}
+button.primary:active{transform:translateY(1px)}
+button.primary:disabled{filter:grayscale(.7) brightness(.8);cursor:default}
+button.ghost{width:100%;border:1px solid var(--line);background:transparent;color:var(--text);border-radius:12px;padding:13px;font-size:15px;font-weight:600;cursor:pointer}
+.reveal{display:flex;flex-direction:column;gap:12px}
+.verdict{font-size:clamp(20px,5.6vw,25px);font-weight:800}
+.verdict.b0{color:var(--green)} .verdict.b1{color:var(--yellow)} .verdict.b2{color:var(--orange)} .verdict.b3{color:var(--red)}
+.nums{display:flex;gap:10px;flex-wrap:wrap}
+.num{flex:1;min-width:120px;background:rgba(0,0,0,.22);border:1px solid var(--line);border-radius:12px;padding:12px 14px}
+.num .k{font-size:12px;color:var(--dim);letter-spacing:.05em;text-transform:uppercase}
+.num .val{font-size:22px;font-weight:800;font-variant-numeric:tabular-nums;margin-top:3px}
+.track{position:relative;height:52px;margin:6px 0 2px}
+.track .bar{position:absolute;top:22px;left:0;right:0;height:8px;border-radius:6px;background:var(--card);border:1px solid var(--line)}
+.track .mark{position:absolute;top:10px;width:2px;height:32px;transform:translateX(-1px)}
+.track .mark.a{background:var(--green)} .track .mark.g{background:var(--accent)}
+.track .lbl{position:absolute;top:-2px;font-size:11px;transform:translateX(-50%);white-space:nowrap;color:var(--dim)}
+.note{font-size:14px;color:var(--dim);line-height:1.45;border-left:3px solid var(--line);padding-left:12px}
+.bands{font-size:clamp(28px,9vw,38px);letter-spacing:3px;text-align:center;margin:4px 0}
+.score{text-align:center;font-size:clamp(30px,9vw,40px);font-weight:800;font-variant-numeric:tabular-nums}
+.score small{font-size:15px;color:var(--dim);font-weight:600}
+.row{display:flex;gap:10px}
+.row>*{flex:1}
+.center{text-align:center}
+.tom{color:var(--dim);font-size:14px;text-align:center;margin-top:2px}
+footer{color:var(--faint);font-size:12px;text-align:center;padding:6px 0 4px}
+#selftest{display:none;white-space:pre-wrap;font:12px/1.5 ui-monospace,Menlo,Consolas,monospace;color:#7ee787;background:#0b0f14;border:1px solid var(--line);border-radius:10px;padding:12px}
+.toast{
+  position:fixed;left:50%;bottom:24px;transform:translateX(-50%) translateY(20px);
+  background:var(--accent);color:#20160a;font-weight:700;font-size:14px;padding:10px 18px;border-radius:999px;
+  opacity:0;pointer-events:none;transition:opacity .2s,transform .2s;z-index:50;
+}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <div class="brand">BALL<span class="dot">·</span>PARK</div>
+    <div class="meta">
+      <span class="pill" id="dayPill">#1</span>
+      <span class="pill" id="streakPill">🔥0</span>
+    </div>
+  </header>
+
+  <div class="dots" id="dots"></div>
+
+  <main id="stage"></main>
+
+  <footer>BALLPARK · a daily estimation game · new puzzle at midnight</footer>
+  <pre id="selftest"></pre>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+(function(){
+"use strict";
+
+/* ---------------------------------------------------------------
+   QUESTION BANK
+   Each: category, question, unit label, true answer (a),
+   slider min/max (chosen to bracket generically, not leak the answer),
+   and a reveal note. Daily set is chosen deterministically from this
+   bank by date seed -> zero ongoing content cost.
+----------------------------------------------------------------*/
+var QUESTIONS = [
+  {c:"Geography", q:"How many countries are in Africa?", u:"countries", a:54, min:0, max:120, n:"54 sovereign states, per the UN."},
+  {c:"Geography", q:"How many time zones does Russia span?", u:"time zones", a:11, min:0, max:24, n:"The most of any country."},
+  {c:"Geography", q:"How many countries share a land border with China?", u:"countries", a:14, min:0, max:30, n:"14, the joint-highest in the world."},
+  {c:"Geography", q:"How many time zones does the contiguous United States span?", u:"time zones", a:4, min:0, max:12, n:"Eastern to Pacific; Alaska and Hawaii add more."},
+  {c:"Geography", q:"How tall is Mount Everest, in metres?", u:"metres", a:8849, min:0, max:12000, n:"8,848.86 m as of the 2020 resurvey."},
+  {c:"Geography", q:"How deep is the Mariana Trench, in metres?", u:"metres", a:10935, min:0, max:20000, n:"~10,935 m at the Challenger Deep."},
+  {c:"Geography", q:"How many US states are there?", u:"states", a:50, min:0, max:100, n:"50, since Hawaii became the 50th in 1959."},
+  {c:"Science", q:"How many moons does Jupiter have confirmed?", u:"moons", a:95, min:0, max:200, n:"95 confirmed as of 2023; more candidates pending."},
+  {c:"Science", q:"How many keys are on a standard full-size piano?", u:"keys", a:88, min:0, max:150, n:"88 keys: 52 white, 36 black."},
+  {c:"Science", q:"What is the speed of light in km per second?", u:"km/s", a:299792, min:0, max:600000, n:"299,792 km/s in a vacuum."},
+  {c:"Science", q:"How many Earths could fit across the Sun's diameter?", u:"Earths", a:109, min:0, max:300, n:"~109 Earth diameters."},
+  {c:"Science", q:"How many people have walked on the Moon?", u:"people", a:12, min:0, max:40, n:"12, all during the Apollo missions."},
+  {c:"Science", q:"How many bones are in the adult human body?", u:"bones", a:206, min:0, max:500, n:"206 in adults; babies start with ~270."},
+  {c:"Science", q:"How many legs does a spider have?", u:"legs", a:8, min:0, max:20, n:"8 legs (insects have 6)."},
+  {c:"Science", q:"About how long does sunlight take to reach Earth, in seconds?", u:"seconds", a:499, min:0, max:1500, n:"Roughly 8 minutes 19 seconds."},
+  {c:"Nature", q:"How many chambers does the human heart have?", u:"chambers", a:4, min:0, max:12, n:"Four: two atria, two ventricles."},
+  {c:"Nature", q:"How many teeth does a typical adult human have?", u:"teeth", a:32, min:0, max:60, n:"32, including wisdom teeth."},
+  {c:"Nature", q:"How many bones are in one human foot?", u:"bones", a:26, min:0, max:60, n:"26 bones per foot."},
+  {c:"Nature", q:"How many hearts does an octopus have?", u:"hearts", a:3, min:0, max:10, n:"Three hearts."},
+  {c:"Space", q:"How many planets are in the Solar System?", u:"planets", a:8, min:0, max:20, n:"Eight, since Pluto was reclassified in 2006."},
+  {c:"Space", q:"How many strings does a standard violin have?", u:"strings", a:4, min:0, max:12, n:"Four: G, D, A, E."},
+  {c:"Sports", q:"How many players are on the field in a soccer match (both teams)?", u:"players", a:22, min:0, max:50, n:"11 per side."},
+  {c:"Sports", q:"How many yards are in a mile?", u:"yards", a:1760, min:0, max:5000, n:"1,760 yards."},
+  {c:"Sports", q:"How many holes are in a standard round of golf?", u:"holes", a:18, min:0, max:40, n:"18 holes, usually two loops of nine."},
+  {c:"Sports", q:"How many stitches are on a Major League baseball?", u:"stitches", a:108, min:0, max:300, n:"108 double stitches."},
+  {c:"Sports", q:"How many points is a touchdown worth in the NFL?", u:"points", a:6, min:0, max:12, n:"6, before the extra point."},
+  {c:"Food", q:"How many calories are in a McDonald's Big Mac?", u:"calories", a:550, min:0, max:1500, n:"Around 550 kcal."},
+  {c:"Food", q:"How many grams are in a pound?", u:"grams", a:454, min:0, max:2000, n:"453.59 g."},
+  {c:"Food", q:"About how many litres are in a standard bathtub?", u:"litres", a:150, min:0, max:500, n:"Roughly 150 litres."},
+  {c:"Time", q:"How many minutes are in a non-leap year?", u:"minutes", a:525600, min:0, max:1200000, n:"525,600."},
+  {c:"Time", q:"How many seconds are in a day?", u:"seconds", a:86400, min:0, max:200000, n:"86,400."},
+  {c:"Time", q:"How many square squares are on a standard chessboard?", u:"squares", a:64, min:0, max:150, n:"64 (8x8)."},
+  {c:"Landmarks", q:"How many floors does the Burj Khalifa have?", u:"floors", a:163, min:0, max:400, n:"163 floors."},
+  {c:"History", q:"How many ancient Wonders of the World were there?", u:"wonders", a:7, min:0, max:20, n:"Seven (only one still stands)."},
+  {c:"History", q:"How many plays did Shakespeare write?", u:"plays", a:37, min:0, max:100, n:"37 are commonly attributed to him."},
+  {c:"History", q:"How many amendments are in the US Bill of Rights?", u:"amendments", a:10, min:0, max:40, n:"Ten."},
+  {c:"Everyday", q:"How many keys are on a standard full-size QWERTY keyboard?", u:"keys", a:104, min:0, max:200, n:"104 on a full-size board with a number pad."},
+  {c:"Everyday", q:"How many sides does a heptadecagon have?", u:"sides", a:17, min:0, max:50, n:"17 sides (a 17-gon)."},
+  {c:"Everyday", q:"How many strings does a standard guitar have?", u:"strings", a:6, min:0, max:20, n:"Six."},
+  {c:"Astronomy", q:"How many Saturn moons are confirmed (as of 2023)?", u:"moons", a:146, min:0, max:300, n:"146 confirmed as of 2023."}
+];
+
+/* ---------------- date / day number ---------------- */
+var LAUNCH_UTC = Date.UTC(2026,9,8); /* 8 Oct 2026 = puzzle #1 */
+var MS_DAY = 86400000;
+var SITE_URL = (location.origin && location.origin !== "null")
+  ? (location.origin + location.pathname)
+  : "https://nwfella.github.io/ballpark/";
+
+function todayLocalUTC(d){ d = d || new Date(); return Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()); }
+function dayIndexOf(d){ return Math.round((todayLocalUTC(d) - LAUNCH_UTC) / MS_DAY); }
+function dayNumberOf(d){ return dayIndexOf(d) + 1; }
+
+/* ---------------- deterministic PRNG + daily set ---------------- */
+function mulberry32(a){
+  return function(){
+    a |= 0; a = a + 0x6D2B79F5 | 0;
+    var t = Math.imul(a ^ a >>> 15, 1 | a);
+    t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
+    return ((t ^ t >>> 14) >>> 0) / 4294967296;
+  };
+}
+function seedFor(mi){ return (((mi + 1000000) * 2654435761) >>> 0); }
+
+function dailyQuestions(mi){
+  var rng = mulberry32(seedFor(mi));
+  var idx = QUESTIONS.map(function(_,i){ return i; });
+  for (var i = idx.length - 1; i > 0; i--){
+    var j = Math.floor(rng() * (i + 1));
+    var t = idx[i]; idx[i] = idx[j]; idx[j] = t;
+  }
+  return idx.slice(0, 5).map(function(i){ return QUESTIONS[i]; });
+}
+
+/* ---------------- scoring ---------------- */
+var BAND_EMO  = ["\u{1F7E9}", "\u{1F7E8}", "\u{1F7E7}", "\u{1F7E5}"]; /* green yellow orange red */
+var BAND_PTS  = [4, 3, 2, 1];
+var BAND_NAME = ["Bullseye", "Close", "Off-target", "Way off"];
+
+function bandOf(guess, answer){
+  var err = Math.abs(guess - answer) / Math.max(answer, 10);
+  if (err <= 0.10) return 0;
+  if (err <= 0.25) return 1;
+  if (err <= 0.50) return 2;
+  return 3;
+}
+function pctErr(guess, answer){ return Math.round(100 * Math.abs(guess - answer) / Math.max(answer, 1)); }
+function scoreOf(bands){ var s = 0; for (var i=0;i<bands.length;i++) s += BAND_PTS[bands[i]]; return s; }
+function bullseyesOf(bands){ var n = 0; for (var i=0;i<bands.length;i++) if (bands[i]===0) n++; return n; }
+
+/* Lossy, spoiler-free share artifact: colored bands, never the answers. */
+function shareText(day, bands){
+  return "BALLPARK #" + day + " \u2014 " + scoreOf(bands) + "/20\n"
+       + bands.map(function(b){ return BAND_EMO[b]; }).join("")
+       + "\n" + SITE_URL;
+}
+
+/* ---------------- number formatting ---------------- */
+function fmt(n){ return Math.round(n).toLocaleString("en-US"); }
+
+/* ---------------- persistence ---------------- */
+var KEY = "ballpark_v1";
+function loadStore(){ try { return JSON.parse(localStorage.getItem(KEY)) || {}; } catch(e){ return {}; } }
+function saveStore(s){ try { localStorage.setItem(KEY, JSON.stringify(s)); } catch(e){} }
+
+/* ---------------- state ---------------- */
+var today = new Date();
+var DAY = dayNumberOf(today);
+var QS = dailyQuestions(dayIndexOf(today));
+
+var store = loadStore();
+if (store.day !== DAY) {
+  /* new day: keep streak/stats, reset today's result */
+  store.day = DAY;
+  store.result = null;
+  store.guesses = null;
+}
+if (!store.stats) store.stats = { played:0, sum:0, best:0 };
+if (typeof store.streak !== "number") store.streak = 0;
+
+var S = {
+  i: 0,
+  bands: [],
+  guesses: [],
+  value: 0,
+  phase: "play",
+  done: !!(store.result)
+};
+
+function stepFor(min, max){
+  var span = max - min;
+  if (span <= 200) return 1;
+  var raw = span / 150;
+  var pow = Math.pow(10, Math.floor(Math.log10(raw)));
+  var n = Math.ceil(raw / pow);
+  var nice = n <= 1 ? 1 : n <= 2 ? 2 : n <= 5 ? 5 : 10;
+  return nice * pow;
+}
+function clampStep(val, q, step){
+  var v = Math.round(val / step) * step;
+  return Math.max(q.min, Math.min(q.max, v));
+}
+
+/* ---------------- rendering ---------------- */
+var stage = document.getElementById("stage");
+var dots  = document.getElementById("dots");
+var dayPill = document.getElementById("dayPill");
+var streakPill = document.getElementById("streakPill");
+var toastEl = document.getElementById("toast");
+
+dayPill.textContent = "#" + DAY;
+streakPill.textContent = "\u{1F525}" + (store.streak || 0);
+
+function renderDots(){
+  var html = "";
+  for (var k=0;k<5;k++){
+    var cls = "";
+    if (k < S.bands.length) cls = "done";
+    if (k === S.i && !S.done) cls = "on";
+    html += '<i class="' + cls + '"></i>';
+  }
+  dots.innerHTML = html;
+}
+
+function esc(s){ return String(s).replace(/[&<>"]/g, function(m){ return ({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;"})[m]; }); }
+
+function renderPlay(){
+  var q = QS[S.i];
+  var step = stepFor(q.min, q.max);
+  if (S.value === 0 || S.phase === "new") {
+    S.value = clampStep((q.min + q.max) / 2, q, step);
+    S.phase = "play";
+  }
+  stage.innerHTML =
+    '<div class="card">' +
+      '<span class="tag">' + esc(q.c) + '</span>' +
+      '<h1 class="q">' + esc(q.q) + '</h1>' +
+      '<div class="unit">Answer in ' + esc(q.u) + '</div>' +
+      '<div class="readout"><span class="v" id="valOut">' + fmt(S.value) + '</span><span class="u">' + esc(q.u) + '</span></div>' +
+      '<input type="range" id="slider" min="' + q.min + '" max="' + q.max + '" step="' + step + '" value="' + S.value + '" aria-label="Your estimate">' +
+      '<div class="steppers">' +
+        '<button data-d="-1">\u2212 ' + fmt(step) + '</button>' +
+        '<button data-d="1">+ ' + fmt(step) + '</button>' +
+      '</div>' +
+      '<div class="hint">Drag the slider or use \u2190 \u2192 keys</div>' +
+      '<div style="height:14px"></div>' +
+      '<button class="primary" id="lock">Lock in</button>' +
+    '</div>';
+
+  var slider = document.getElementById("slider");
+  var out = document.getElementById("valOut");
+  slider.addEventListener("input", function(){
+    S.value = Number(slider.value);
+    out.textContent = fmt(S.value);
+  });
+  var btns = stage.querySelectorAll(".steppers button");
+  for (var b=0;b<btns.length;b++){
+    btns[b].addEventListener("click", function(){
+      var d = Number(this.getAttribute("data-d"));
+      S.value = clampStep(S.value + d*step, q, step);
+      slider.value = S.value;
+      out.textContent = fmt(S.value);
+    });
+  }
+  document.getElementById("lock").addEventListener("click", lockIn);
+}
+
+function lockIn(){
+  var q = QS[S.i];
+  var g = S.value;
+  var band = bandOf(g, q.a);
+  S.guesses.push(g);
+  S.bands.push(band);
+  renderReveal(q, g, band);
+}
+
+function renderReveal(q, g, band){
+  S.phase = "reveal";
+  var span = q.max - q.min;
+  var truePos = ((q.a - q.min) / span) * 100;
+  var guessPos = ((g - q.min) / span) * 100;
+  var last = (S.i === QS.length - 1);
+  stage.innerHTML =
+    '<div class="card reveal">' +
+      '<div class="verdict b' + band + '">' + BAND_NAME[band] + '</div>' +
+      '<div class="nums">' +
+        '<div class="num"><div class="k">You said</div><div class="val">' + fmt(g) + '</div></div>' +
+        '<div class="num"><div class="k">Answer</div><div class="val">' + fmt(q.a) + '</div></div>' +
+        '<div class="num"><div class="k">Off by</div><div class="val">' + pctErr(g, q.a) + '%</div></div>' +
+      '</div>' +
+      '<div class="track">' +
+        '<div class="bar"></div>' +
+        '<div class="mark a" style="left:' + truePos + '%"></div>' +
+        '<div class="lbl" style="left:' + truePos + '%">answer</div>' +
+        '<div class="mark g" style="left:' + guessPos + '%"></div>' +
+      '</div>' +
+      '<div class="note">' + esc(q.n) + '</div>' +
+      '<button class="primary" id="next">' + (last ? "See result" : "Next question") + '</button>' +
+    '</div>';
+
+  document.getElementById("next").addEventListener("click", function(){
+    if (last) { finish(); }
+    else { S.i++; S.value = 0; S.phase = "new"; renderDots(); renderPlay(); }
+  });
+  renderDots();
+}
+
+function finish(){
+  S.done = true;
+  var score = scoreOf(S.bands);
+  var bull = bullseyesOf(S.bands);
+
+  store.result = { bands: S.bands.slice(), score: score, bull: bull };
+  store.guesses = S.guesses.slice();
+  store.stats.played++;
+  store.stats.sum += score;
+  if (score > store.stats.best) store.stats.best = score;
+  store.streak = (store.streak || 0) + 1;
+  saveStore(store);
+
+  renderDots();
+  streakPill.textContent = "\u{1F525}" + store.streak;
+  renderResult();
+}
+
+function nextMidnightText(){
+  var now = new Date();
+  var t = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1, 0, 0, 0);
+  var ms = t - now;
+  var h = Math.floor(ms/3600000), m = Math.floor(ms%3600000/60000);
+  return h + "h " + m + "m";
+}
+
+function renderResult(){
+  var score = store.result.score;
+  var bands = store.result.bands;
+  var bull = store.result.bull;
+  var avg = store.stats.played ? (store.stats.sum / store.stats.played).toFixed(1) : "0";
+  stage.innerHTML =
+    '<div class="card reveal">' +
+      '<div class="center"><span class="tag">BALLPARK #' + DAY + '</span></div>' +
+      '<div class="bands" id="bandsRow">' + bands.map(function(b){ return BAND_EMO[b]; }).join("") + '</div>' +
+      '<div class="score">' + score + '<small>/20</small></div>' +
+      '<div class="center" style="color:var(--dim);font-size:14px;margin-top:4px">' + bull + ' bullseye' + (bull===1?"":"s") + '</div>' +
+      '<div class="row" style="margin-top:14px">' +
+        '<button class="primary" id="share">Share result</button>' +
+      '</div>' +
+      '<button class="ghost" id="challenge" style="margin-top:2px">Challenge output (copy text)</button>' +
+      '<div class="note" style="font-size:13px">' +
+        'Streak: ' + store.streak + ' \u00b7 Played: ' + store.stats.played + ' \u00b7 Avg: ' + avg + '/20 \u00b7 Best: ' + store.stats.best + '/20' +
+      '</div>' +
+      '<div class="tom">Next puzzle in ' + nextMidnightText() + '</div>' +
+    '</div>';
+
+  document.getElementById("share").addEventListener("click", doShare);
+  document.getElementById("challenge").addEventListener("click", doShare);
+}
+
+/* ---------------- share (the growth engine) ---------------- */
+function doShare(){
+  var text = shareText(DAY, store.result.bands);
+  if (navigator.share) {
+    navigator.share({ title: "BALLPARK #" + DAY, text: text })
+      .catch(function(){ copyText(text); });
+  } else {
+    copyText(text);
+  }
+}
+function copyText(text){
+  var done = false;
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(text).then(function(){ showToast("Result copied \u2014 paste it anywhere"); }, function(){ legacyCopy(text); });
+    done = true;
+  }
+  if (!done) legacyCopy(text);
+}
+function legacyCopy(text){
+  var ta = document.createElement("textarea");
+  ta.value = text; ta.setAttribute("readonly",""); ta.style.position = "fixed"; ta.style.left = "-9999px";
+  document.body.appendChild(ta); ta.select();
+  try { document.execCommand("copy"); showToast("Result copied"); } catch(e){ showToast(text); }
+  document.body.removeChild(ta);
+}
+var toastTimer;
+function showToast(msg){
+  toastEl.textContent = msg;
+  toastEl.classList.add("show");
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(function(){ toastEl.classList.remove("show"); }, 2200);
+}
+
+/* ---------------- boot ---------------- */
+renderDots();
+if (S.done) { renderResult(); }
+else { renderPlay(); }
+
+/* ---------------- self-test (?selftest=1) ---------------- */
+function runSelfTest(){
+  var fails = [], checks = 0;
+  function ok(cond, msg){ checks++; if (!cond) fails.push(msg); }
+
+  ok(QUESTIONS.length >= 10, "bank too small");
+  QUESTIONS.forEach(function(q,i){
+    ok(q.min < q.max, "range invalid #" + i);
+    ok(q.a >= q.min && q.a <= q.max, "answer outside range #" + i);
+    ok(typeof q.q === "string" && q.q.length > 6, "question text #" + i);
+    ok(typeof q.n === "string" && q.n.length > 3, "note #" + i);
+  });
+
+  var d3a = dailyQuestions(3), d3b = dailyQuestions(3), d4 = dailyQuestions(4);
+  ok(d3a.length === 5, "daily length != 5");
+  ok(JSON.stringify(d3a) === JSON.stringify(d3b), "daily not deterministic");
+  ok(JSON.stringify(dailyQuestions(4)) === JSON.stringify(d4), "daily not deterministic (2)");
+  ok(JSON.stringify(d3a) !== JSON.stringify(d4), "days produce identical sets");
+  ok(new Set(d3a).size === 5, "duplicate question in a day");
+
+  ok(bandOf(100,100) === 0, "exact should be bullseye");
+  ok(bandOf(108,100) === 0, "8% should be bullseye");
+  ok(bandOf(120,100) === 1, "20% should be close");
+  ok(bandOf(140,100) === 2, "40% should be off-target");
+  ok(bandOf(300,100) === 3, "200% should be way off");
+  ok(bandOf(4,3) === 0, "small-answer absolute floor");
+
+  ok(scoreOf([0,0,0,0,0]) === 20, "max score != 20");
+  ok(scoreOf([3,3,3,3,3]) === 5, "min score != 5");
+  ok(bullseyesOf([0,1,0,2,3]) === 2, "bullseye count");
+
+  var st = shareText(7, [0,1,2,3,0]);
+  ok(st.indexOf("#7") > -1, "share missing day");
+  ok(st.indexOf("14/20") > -1, "share missing score");
+  var blocks = (st.match(/[\u{1F7E9}\u{1F7E8}\u{1F7E7}\u{1F7E5}]/gu) || []).length;
+  ok(blocks === 5, "share should have 5 blocks, got " + blocks);
+  ok(st.indexOf("54") === -1 && st.indexOf("Answer") === -1, "share leaks raw answers");
+
+  return { checks: checks, fails: fails };
+}
+
+if (/[?&]selftest/.test(location.search)) {
+  var r = runSelfTest();
+  var el = document.getElementById("selftest");
+  el.style.display = "block";
+  var verdict = r.fails.length ? "FAIL" : "PASS";
+  el.textContent = "SELFTEST " + verdict + " | checks=" + r.checks + " fails=" + r.fails.length
+    + (r.fails.length ? "\n" + r.fails.join("\n") : "");
+  document.title = "SELFTEST " + verdict + " (" + r.checks + " checks)";
+  window.__SELFTEST__ = r;
+}
+
+/* ---------------- metrics probe (?metrics=1) ---------------- */
+if (/[?&]metrics/.test(location.search)) {
+  var mstr = function(){
+    var app = document.querySelector(".app");
+    return window.innerWidth + "|" + document.documentElement.scrollWidth + "|"
+      + document.body.scrollWidth + "|" + (app ? Math.round(app.getBoundingClientRect().width) : -1);
+  };
+  var me = document.getElementById("selftest");
+  me.style.display = "block";
+  me.textContent = "METRICS innerW|docScrollW|bodyScrollW|appW = " + mstr();
+  document.title = "METRICS " + mstr();
+}
+
+/* ---------------- reveal demo (?reveal=1) ---------------- */
+if (/[?&]reveal/.test(location.search)) {
+  var qr = QS[0];
+  S.value = clampStep(qr.a * 0.7, qr, stepFor(qr.min, qr.max));
+  lockIn();
+}
+
+/* ---------------- autoplay (?autoplay=1): full-loop gate ---------------- */
+if (/[?&]autoplay/.test(location.search)) {
+  var offs = [0, 0.15, 0.40, 1.00, 0.05];
+  for (var kk = 0; kk < QS.length; kk++) {
+    var qq = QS[S.i];
+    var target = qq.a * (1 + offs[kk % offs.length]);
+    target = Math.max(qq.min, Math.min(qq.max, target));
+    S.value = clampStep(target, qq, stepFor(qq.min, qq.max));
+    lockIn();
+    var nb = document.getElementById("next");
+    if (nb) nb.click();
+  }
+  var st = shareText(DAY, store.result.bands);
+  var rowEl = document.getElementById("bandsRow");
+  var glyphs = rowEl ? (rowEl.textContent.match(/[\u{1F7E9}\u{1F7E8}\u{1F7E7}\u{1F7E5}]/gu) || []).length : 0;
+  var summary = {
+    played: store.result.bands.length,
+    bands: store.result.bands,
+    score: store.result.score,
+    bull: store.result.bull,
+    glyphsRendered: glyphs,
+    shareText: st
+  };
+  var se = document.getElementById("selftest");
+  se.style.display = "block";
+  se.textContent = "AUTOPLAY " + JSON.stringify(summary);
+  document.title = "AUTOPLAY played=" + summary.played + " score=" + summary.score + " glyphs=" + glyphs;
+  window.__AUTOPLAY__ = summary;
+}
+
+})();
+</script>
+</body>
+</html>
