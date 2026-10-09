@@ -9,6 +9,7 @@ duplicate guard).
 
 Usage:  python scripts/build_bank.py
 """
+import json
 import os
 import re
 import sys
@@ -89,6 +90,23 @@ def qid(text):
 
 sys.path.insert(0, HERE)
 from questions_new import NEW  # noqa: E402
+
+
+def load_extra():
+    """Optional drip batch: build_bank.py --extra <candidates.json>
+
+    A JSON list of {c,q,u,a,min,max,n}. Used by scripts/nightly.py so the cron
+    can merge a small selected batch without editing questions_new.py.
+    """
+    if "--extra" not in sys.argv:
+        return []
+    path = sys.argv[sys.argv.index("--extra") + 1]
+    if not os.path.exists(path):
+        print("extra candidates file not found: %s" % path)
+        return []
+    with open(path, encoding="utf-8") as fh:
+        rows = json.load(fh)
+    return [(r["c"], r["q"], r["u"], r["a"], r["min"], r["max"], r["n"]) for r in rows]
 
 ENTRY = re.compile(
     r'\{c:"(.*?)",\s*q:"(.*?)",\s*u:"(.*?)",\s*a:(-?[0-9.]+),\s*'
@@ -245,10 +263,12 @@ def main():
             "refusing to drop questions that are frozen in the schedule "
             "(this would orphan a day): " + "; ".join(orphan_drops))
 
+    candidates = list(NEW) + load_extra()
+
     seen = {norm(e["q"]) for e in existing}
     merged = list(existing)
     skipped = []
-    for c, q, u, a, mn, mx, n in NEW:
+    for c, q, u, a, mn, mx, n in candidates:
         key = norm(q)
         if key in seen:
             skipped.append(q)
@@ -297,7 +317,7 @@ def main():
 
     print("markers inserted this run : %s" % inserted)
     print("existing in file          : %d" % len(existing))
-    print("candidates in batch       : %d" % len(NEW))
+    print("candidates in batch       : %d" % len(candidates))
     print("added                     : %d" % (len(merged) - len(existing)))
     print("duplicates skipped        : %d" % len(skipped))
     print("TOTAL bank                : %d  ->  %d-day rotation"
@@ -307,6 +327,14 @@ def main():
           % (len(sched) // 5, new_days, HORIZON_DAYS))
     if skipped:
         print("skipped:", "; ".join(skipped[:8]))
+
+    return {
+        "added": len(merged) - len(existing),
+        "total": len(merged),
+        "days": len(sched) // 5,
+        "new_days": new_days,
+        "skipped": len(skipped),
+    }
 
 
 if __name__ == "__main__":
