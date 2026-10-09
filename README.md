@@ -6,7 +6,7 @@
 
 ![BALLPARK — the daily estimation game](docs/play.png)
 
-`single file` · `zero dependencies` · `no build step` · `no server` · `MIT` · ~28 KB
+`single file` · `zero dependencies` · `no build step` · `no server` · `MIT` · ~52 KB
 
 ---
 
@@ -117,7 +117,7 @@ The checks are **built into the page**, so there's no test runner and no Node re
 
 | URL | What it does |
 |---|---|
-| `?selftest=1` | 179 assertions — question-bank integrity (answers inside their ranges, real reveal notes), daily determinism and variety, scoring bands, share-text shape, and a **no-leak** check that the share text never contains answers. Sets the page `<title>` to `SELFTEST PASS`/`FAIL`. |
+| `?selftest=1` | 1,430 assertions — bank integrity (integer answers inside their ranges, no answer sitting on a slider edge, real reveal notes, **no duplicate questions**), daily determinism and variety, scoring bands, share-text shape, and a **no-leak** check that the share text never contains answers. Sets the page `<title>` to `SELFTEST PASS`/`FAIL`. |
 | `?autoplay=1` | Plays all five rounds programmatically and renders the result card — a full-loop smoke test. |
 | `?reveal=1` | Locks in one answer so you can inspect the reveal screen. |
 | `?metrics=1` | Writes viewport / scroll widths to `<title>` for responsive-overflow checks. |
@@ -127,7 +127,7 @@ Headless verification (Chrome):
 ```bash
 chrome --headless=new --dump-dom --virtual-time-budget=5000 \
   "file:///…/index.html?selftest=1" | grep -o '<title>[^<]*</title>'
-# -> <title>SELFTEST PASS (179 checks)</title>
+# -> <title>SELFTEST PASS (1430 checks)</title>
 
 chrome --headless=new --dump-dom --virtual-time-budget=5000 \
   "file:///…/index.html?autoplay=1" | grep -o 'AUTOPLAY [^<]*'
@@ -162,11 +162,34 @@ To add a question:
 2. Write a genuine `n` (reveal note) — not just the bare number.
 3. Run `?selftest=1`; it enforces all of the above.
 
-The current bank is **40 questions** (five a day → an eight-day cycle). For a public launch, 200+ gives a comfortable rotation.
+The bank currently holds **235 questions** across 13 categories — five a day, so a **47-day rotation**. It is maintained by two scripts in `scripts/`:
+
+| Script | Purpose |
+|---|---|
+| `scripts/questions_new.py` | The batch definition — one tuple per candidate question. |
+| `scripts/build_bank.py` | Merges candidates into `index.html` between `/* BANK:START */` and `/* BANK:END */`, dedupes, normalises category labels, and applies a corrections table. Idempotent and self-healing — re-running is always safe. |
+| `scripts/audit_bank.py` | Flags weak reveal notes (e.g. a bare number like `42.`). |
+
+```bash
+python scripts/build_bank.py     # merge + apply corrections
+python scripts/audit_bank.py     # report weak notes (expect 0)
+# then: ?selftest=1 must PASS before you commit
+```
+
+**Rules the batch followed — and the gate now enforces:**
+
+1. **Integer answers only.** The slider steps by whole numbers, so a fractional true answer (2.54) is unreachable and the revealed answer would be a rounding, not a fact.
+2. **No answer on a slider edge.** If the true value equals the slider minimum or maximum, a player wins by slamming the slider to one end. This retired two otherwise-good questions — *"0 moons on Venus"* and *"0 bones in a shark"*.
+3. **No duplicate questions** (normalised-text check across the whole bank).
+
+**Stable facts only:** unit conversions, fixed counts, and settled history. **No** "tallest / richest / current record / current population" items — those expire and would silently become wrong answers. Contested figures are excluded too: a question about how many countries the equator crosses was cut, because the honest answer is 11 on land or 13 including territorial waters, and a daily game must not display a "true" answer that is genuinely argued about.
+
+> ⚠️ **Growing the bank reshuffles every day.** The daily set is a seeded shuffle of the whole bank, so appending questions changes which questions land on *every* day index, including ones already played. Harmless while the game is new; once real players have history you want the frozen-schedule approach in the Roadmap before adding more.
 
 ## Roadmap
 
-- [ ] Expand the bank to 200+ questions across more categories.
+- [x] Expand the bank to 200+ questions across more categories. *(235 across 13 categories)*
+- [ ] **Freeze a rolling schedule** before the bank grows again — adding questions currently reshuffles every day, including days already played.
 - [ ] Share/copy event logging — measure whether the growth loop actually fires.
 - [ ] A stats modal with a score-distribution chart.
 - [ ] Optional archive / practice mode.
