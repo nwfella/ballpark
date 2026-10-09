@@ -117,7 +117,7 @@ The checks are **built into the page**, so there's no test runner and no Node re
 
 | URL | What it does |
 |---|---|
-| `?selftest=1` | 1,439 assertions — bank integrity (integer answers inside their ranges, no answer sitting on a slider edge, real reveal notes, **no duplicate questions**), **frozen-schedule integrity** (no orphaned ids, no day with a repeated question, day 0 resolving exactly to what the schedule records), daily determinism and variety, scoring bands, share-text shape, and a **no-leak** check that the share text never contains answers. Sets the page `<title>` to `SELFTEST PASS`/`FAIL`. |
+| `?selftest=1` | 1,400+ assertions (the count scales with the bank; 1,469 at 240 questions) — bank integrity (integer answers inside their ranges, no answer sitting on a slider edge, real reveal notes, **no duplicate questions**), **frozen-schedule integrity** (no orphaned ids, no day with a repeated question, day 0 resolving exactly to what the schedule records), daily determinism and variety, scoring bands, share-text shape, and a **no-leak** check that the share text never contains answers. Sets the page `<title>` to `SELFTEST PASS`/`FAIL`. |
 | `?autoplay=1` | Plays all five rounds programmatically and renders the result card — a full-loop smoke test. |
 | `?reveal=1` | Locks in one answer so you can inspect the reveal screen. |
 | `?metrics=1` | Writes viewport / scroll widths to `<title>` for responsive-overflow checks. |
@@ -127,7 +127,7 @@ Headless verification (Chrome):
 ```bash
 chrome --headless=new --dump-dom --virtual-time-budget=5000 \
   "file:///…/index.html?selftest=1" | grep -o '<title>[^<]*</title>'
-# -> <title>SELFTEST PASS (1439 checks)</title>
+# -> <title>SELFTEST PASS (1469 checks)</title>
 
 chrome --headless=new --dump-dom --virtual-time-budget=5000 \
   "file:///…/index.html?autoplay=1" | grep -o 'AUTOPLAY [^<]*'
@@ -162,19 +162,22 @@ To add a question:
 2. Write a genuine `n` (reveal note) — not just the bare number.
 3. Run `?selftest=1`; it enforces all of the above.
 
-The bank currently holds **235 questions** across 13 categories — five a day, so a **47-day rotation**. It is maintained by two scripts in `scripts/`:
+The bank holds **240 questions** across 13 categories — five a day, so a **48-day rotation** — and grows by up to 5 a night via the cron top-up below. It is maintained by the scripts in `scripts/`:
 
 | Script | Purpose |
 |---|---|
-| `scripts/questions_new.py` | The batch definition — one tuple per candidate question. |
+| `scripts/questions_new.py` | The original batch definition — one tuple per candidate question. |
+| `scripts/pool.py` | The curated pool the nightly job drips from. Add entries here to grow the bank. |
 | `scripts/build_bank.py` | **Freezes the schedule first, then merges** candidates into `index.html`. Dedupes, normalises category labels, applies a corrections table. Idempotent and self-healing — re-running is always safe. |
 | `scripts/audit_bank.py` | Flags weak reveal notes (e.g. a bare number like `42.`). |
-| `scripts/verify_freeze.py` | Proves the frozen schedule holds: replays it against a simulated larger bank and shows frozen days are unchanged while an unfrozen fallback would have drifted. |
+| `scripts/verify_freeze.py` | Proves no frozen day moved across the last bank growth (compares against the previous commit at a different bank size). |
+| `scripts/nightly.py` | The cron job: drip → quarantine → freeze+merge → gate → commit/push. |
 
 ```bash
 python scripts/build_bank.py     # freeze schedule + merge + apply corrections
 python scripts/audit_bank.py     # report weak notes (expect 0)
-python scripts/verify_freeze.py  # prove frozen days did not move
+python scripts/verify_freeze.py  # prove no frozen day moved
+python scripts/nightly.py --dry-run   # what the cron would do tonight
 # then: ?selftest=1 must PASS before you commit
 ```
 
@@ -198,10 +201,31 @@ Growing the bank used to reshuffle **every** day's puzzle — including days alr
 
 Run `scripts/verify_freeze.py` to see the guarantee demonstrated: every sampled day reproduces the pre-growth bank exactly, while an unfrozen fallback would have drifted on all of them.
 
+## Nightly top-up (cron)
+
+A Hermes cron job — **`BALLPARK nightly question top-up`**, daily at 03:15 — grows the bank with no human in the loop. It is deliberately **not generative**:
+
+1. **Refuses to run on a dirty tree**, so it can never commit unrelated work.
+2. Takes up to **5** unbanked candidates from `scripts/pool.py`.
+3. **Verifies each structurally** — integer answer, inside its range, not on a slider edge, a real reveal note, no duplicate. Anything that fails is **quarantined**: logged, never published.
+4. Freezes the schedule and merges. `build_bank.py` freezes *before* it merges, so a day that could already have been played keeps the questions it had.
+5. Runs the real in-page **`?selftest=1`** gate in headless Chrome.
+6. **Commits and pushes only if the gate passed**, then confirms `origin/main` matches the new commit and that the deployed page actually serves the new bank. *Any* failure reverts `index.html` and exits non-zero, which raises an alert.
+
+It is **silent when there is nothing to add** (stdout *is* the delivered message), and prints a one-time notice when the pool runs dry.
+
+**Why it doesn't invent facts.** Unattended LLM fact generation is the failure mode this project refuses: a daily game that publishes a wrong "true answer" destroys trust in a single day, and no cheap automated check reliably catches a confidently-wrong number. Every question the job publishes therefore comes from the curated, human-reviewed pool. Its value is **drip + freeze + verify**, not invention. To grow the bank further, append to `scripts/pool.py`.
+
+```bash
+python scripts/nightly.py --dry-run   # verify + report; writes nothing
+python scripts/nightly.py             # the real thing
+```
+
 ## Roadmap
 
-- [x] Expand the bank to 200+ questions across more categories. *(235 across 13 categories)*
+- [x] Expand the bank to 200+ questions across more categories. *(240 across 13 categories, growing)*
 - [x] **Freeze a rolling schedule** — 181 days pinned; each day is frozen against the bank before any bank change, so played days never move.
+- [x] **Nightly top-up cron** — drips up to 5 verified questions a night, quarantines failures, gates, and commits only on pass.
 - [ ] Share/copy event logging — measure whether the growth loop actually fires.
 - [ ] A stats modal with a score-distribution chart.
 - [ ] Optional archive / practice mode.
