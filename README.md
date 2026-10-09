@@ -95,7 +95,7 @@ Every hook is aimed at the one metric that matters — does a player bring anoth
 
 Everything lives in **`index.html`** — markup, styles, and logic in one file. There is no build step, no bundler, no package manager, and no external requests. Open the file and it runs.
 
-- **Daily generation:** date → day index → `mulberry32` seeded shuffle → first five questions.
+- **Daily generation:** frozen schedule lookup by day (question ids) → falls back to a `mulberry32` seeded shuffle of the live bank for days beyond the horizon.
 - **Scoring:** `err = |guess − answer| / max(answer, 10)`, then banded at 10% / 25% / 50%.
 - **Persistence:** `localStorage` (`ballpark_v1` key) — streak, lifetime stats, and today's result (so a refresh can't replay the day).
 - **Sharing:** `navigator.share` → clipboard fallback → `execCommand` fallback.
@@ -117,7 +117,7 @@ The checks are **built into the page**, so there's no test runner and no Node re
 
 | URL | What it does |
 |---|---|
-| `?selftest=1` | 1,430 assertions — bank integrity (integer answers inside their ranges, no answer sitting on a slider edge, real reveal notes, **no duplicate questions**), daily determinism and variety, scoring bands, share-text shape, and a **no-leak** check that the share text never contains answers. Sets the page `<title>` to `SELFTEST PASS`/`FAIL`. |
+| `?selftest=1` | 1,439 assertions — bank integrity (integer answers inside their ranges, no answer sitting on a slider edge, real reveal notes, **no duplicate questions**), **frozen-schedule integrity** (no orphaned ids, no day with a repeated question, day 0 resolving exactly to what the schedule records), daily determinism and variety, scoring bands, share-text shape, and a **no-leak** check that the share text never contains answers. Sets the page `<title>` to `SELFTEST PASS`/`FAIL`. |
 | `?autoplay=1` | Plays all five rounds programmatically and renders the result card — a full-loop smoke test. |
 | `?reveal=1` | Locks in one answer so you can inspect the reveal screen. |
 | `?metrics=1` | Writes viewport / scroll widths to `<title>` for responsive-overflow checks. |
@@ -127,7 +127,7 @@ Headless verification (Chrome):
 ```bash
 chrome --headless=new --dump-dom --virtual-time-budget=5000 \
   "file:///…/index.html?selftest=1" | grep -o '<title>[^<]*</title>'
-# -> <title>SELFTEST PASS (1430 checks)</title>
+# -> <title>SELFTEST PASS (1439 checks)</title>
 
 chrome --headless=new --dump-dom --virtual-time-budget=5000 \
   "file:///…/index.html?autoplay=1" | grep -o 'AUTOPLAY [^<]*'
@@ -167,12 +167,14 @@ The bank currently holds **235 questions** across 13 categories — five a day, 
 | Script | Purpose |
 |---|---|
 | `scripts/questions_new.py` | The batch definition — one tuple per candidate question. |
-| `scripts/build_bank.py` | Merges candidates into `index.html` between `/* BANK:START */` and `/* BANK:END */`, dedupes, normalises category labels, and applies a corrections table. Idempotent and self-healing — re-running is always safe. |
+| `scripts/build_bank.py` | **Freezes the schedule first, then merges** candidates into `index.html`. Dedupes, normalises category labels, applies a corrections table. Idempotent and self-healing — re-running is always safe. |
 | `scripts/audit_bank.py` | Flags weak reveal notes (e.g. a bare number like `42.`). |
+| `scripts/verify_freeze.py` | Proves the frozen schedule holds: replays it against a simulated larger bank and shows frozen days are unchanged while an unfrozen fallback would have drifted. |
 
 ```bash
-python scripts/build_bank.py     # merge + apply corrections
+python scripts/build_bank.py     # freeze schedule + merge + apply corrections
 python scripts/audit_bank.py     # report weak notes (expect 0)
+python scripts/verify_freeze.py  # prove frozen days did not move
 # then: ?selftest=1 must PASS before you commit
 ```
 
@@ -184,12 +186,22 @@ python scripts/audit_bank.py     # report weak notes (expect 0)
 
 **Stable facts only:** unit conversions, fixed counts, and settled history. **No** "tallest / richest / current record / current population" items — those expire and would silently become wrong answers. Contested figures are excluded too: a question about how many countries the equator crosses was cut, because the honest answer is 11 on land or 13 including territorial waters, and a daily game must not display a "true" answer that is genuinely argued about.
 
-> ⚠️ **Growing the bank reshuffles every day.** The daily set is a seeded shuffle of the whole bank, so appending questions changes which questions land on *every* day index, including ones already played. Harmless while the game is new; once real players have history you want the frozen-schedule approach in the Roadmap before adding more.
+### The frozen schedule
+
+Growing the bank used to reshuffle **every** day's puzzle — including days already played — because the daily set is a seeded shuffle of the whole bank. That is now fixed.
+
+- Each day is pinned to five **question ids**: an FNV-1a hash of the question's normalised text, not an array index. Re-sorting or editing the bank therefore cannot silently repoint a day.
+- `scripts/build_bank.py` **freezes before it merges**. Every day up to `today + 180` is pinned against the bank *exactly as it is at that moment*, so any day that could already have been played keeps the questions it had.
+- Days beyond the schedule fall back to a deterministic shuffle of the live bank — stable for as long as you don't add questions, and always re-frozen before you do.
+- Freezing also removes the CDN-cache desync window: a client holding a cached copy and a client with the new build agree on frozen days.
+- The self-test rejects **orphaned ids** (a frozen day pointing at a question that no longer exists), so the bank can't be edited out from under a scheduled day.
+
+Run `scripts/verify_freeze.py` to see the guarantee demonstrated: every sampled day reproduces the pre-growth bank exactly, while an unfrozen fallback would have drifted on all of them.
 
 ## Roadmap
 
 - [x] Expand the bank to 200+ questions across more categories. *(235 across 13 categories)*
-- [ ] **Freeze a rolling schedule** before the bank grows again — adding questions currently reshuffles every day, including days already played.
+- [x] **Freeze a rolling schedule** — 181 days pinned; each day is frozen against the bank before any bank change, so played days never move.
 - [ ] Share/copy event logging — measure whether the growth loop actually fires.
 - [ ] A stats modal with a score-distribution chart.
 - [ ] Optional archive / practice mode.

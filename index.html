@@ -358,6 +358,199 @@ var QUESTIONS = [
   /* BANK:END */
 ];
 
+/* Frozen daily schedule: five question ids per day, day 0 first.
+   Generated and extended by scripts/build_bank.py, which freezes each day
+   against the bank as it was at that moment. A day that appears here NEVER
+   changes when the bank grows - that is the whole point. Days beyond the
+   schedule fall back to a deterministic shuffle of the live bank.
+   The ids are content hashes (see qid() below), not array indexes, so
+   re-sorting or editing the bank cannot silently repoint a day. */
+var SCHEDULE = [
+  /* SCHEDULE:START */
+  "h45kbc", "hhl6tf", "cgiu1u", "upmtdd", "3pdku2",   /* day #1 */
+  "oto802", "k7ntr6", "4nfaf1", "x7cfzy", "tv05ii",   /* day #2 */
+  "5hinj1", "eilvx3", "oy3uk7", "nq0bup", "gtb769",   /* day #3 */
+  "s5r5vw", "294epm", "ux0j97", "ph23p6", "crdwqm",   /* day #4 */
+  "6lsm9l", "vettqp", "07kd7x", "r5elv2", "mhzxc2",   /* day #5 */
+  "ckrr17", "7gm5dq", "s5pf92", "6i43tu", "rlidtd",   /* day #6 */
+  "d5w7je", "ahf2in", "ugmg6f", "pl4lfx", "r1o7pe",   /* day #7 */
+  "4xsfyq", "orftqu", "mhzxc2", "98kjo0", "vi3af0",   /* day #8 */
+  "gw9kx9", "166c5u", "gxtxno", "pvfz3f", "ph23p6",   /* day #9 */
+  "cutx6y", "8sxen2", "8qj1pg", "r1o7pe", "096h6n",   /* day #10 */
+  "vk7y0n", "ewtcln", "ub6ibx", "zx1c0o", "95uda0",   /* day #11 */
+  "izz30y", "oto802", "ghticr", "4y8oio", "wg439y",   /* day #12 */
+  "eilvx3", "1srq2t", "3lctt7", "tv05ii", "xyhtjc",   /* day #13 */
+  "1sf2p8", "f9l9e3", "my6gut", "8pfsz3", "qs6q5k",   /* day #14 */
+  "p1xd86", "vhn11f", "kgirlg", "o8pvxe", "iw73po",   /* day #15 */
+  "294epm", "d5w7je", "g16v2u", "s5r5vw", "uo7v06",   /* day #16 */
+  "t5uw25", "bb0mgz", "tv05ii", "hhl6tf", "hqei7d",   /* day #17 */
+  "08zjry", "10nx5s", "me7h30", "ckrr17", "imath4",   /* day #18 */
+  "ph23p6", "1grux7", "gxtxno", "g16v2u", "ws9uj7",   /* day #19 */
+  "pj9x2r", "6c73mo", "pl4lfx", "4xsfyq", "pxiqjv",   /* day #20 */
+  "z8qy0m", "7gahid", "macqzx", "my6gut", "8kr5wu",   /* day #21 */
+  "iw73po", "o8pvxe", "vdq6d8", "ssx35q", "bu22an",   /* day #22 */
+  "ay1jmt", "f9l9e3", "j9h1ym", "85qcy7", "shdrz5",   /* day #23 */
+  "3rgr31", "06ae6k", "g0acxc", "zqekm7", "1sf2p8",   /* day #24 */
+  "pxiqjv", "pl6emp", "vdq6d8", "j1aoex", "g26pcj",   /* day #25 */
+  "ovsd6p", "wc3aly", "dejdqb", "166c5u", "v3yajo",   /* day #26 */
+  "g26pcj", "s07h6d", "xdf1ar", "eilvx3", "cz2f52",   /* day #27 */
+  "ma7p3b", "z8qy0m", "d5w7je", "drikcz", "gtb769",   /* day #28 */
+  "x7cfzy", "ecltvj", "294epm", "nrnc1w", "pl4lfx",   /* day #29 */
+  "g16v2u", "fkx9w4", "me7h30", "r1o7pe", "h45kbc",   /* day #30 */
+  "1nwnvl", "hhl6tf", "18lw6f", "5macq2", "jlgn61",   /* day #31 */
+  "yedqn8", "zx1c0o", "upmtdd", "rlidtd", "j6wi6e",   /* day #32 */
+  "0n1g9b", "1mmwdr", "73dyg2", "p1xd86", "hhl6tf",   /* day #33 */
+  "1srq2t", "0n1g9b", "d3a1vm", "ws9uj7", "2el7yi",   /* day #34 */
+  "exmzfu", "oy3uk7", "j5fthr", "yedqn8", "j6wi6e",   /* day #35 */
+  "bt20k9", "yedqn8", "ugmg6f", "nbcxk9", "06ae6k",   /* day #36 */
+  "upmtdd", "7gm5dq", "51yv18", "uo7v06", "cbqn1a",   /* day #37 */
+  "0funpq", "7q22u2", "3lctt7", "rlidtd", "vjs12b",   /* day #38 */
+  "chbtas", "fzb5ly", "s5r5vw", "hqei7d", "9pcozp",   /* day #39 */
+  "73dyg2", "vmtgks", "pl4lfx", "upmtdd", "efolrw",   /* day #40 */
+  "macqzx", "g26pcj", "1srq2t", "jjkcre", "kbskcr",   /* day #41 */
+  "c6wmlg", "ghticr", "14owyr", "ovsd6p", "abenow",   /* day #42 */
+  "gtb769", "1wsxa0", "oto802", "5gi2kn", "ws9uj7",   /* day #43 */
+  "7gm5dq", "bt20k9", "jwmgj3", "ecltvj", "r1o7pe",   /* day #44 */
+  "gxtxno", "5gi2kn", "37w5gg", "to6msu", "fd6w65",   /* day #45 */
+  "1mmwdr", "o8pvxe", "43ij1b", "ovsd6p", "c6wmlg",   /* day #46 */
+  "9f29fp", "pboake", "4xsfyq", "1nwnvl", "kgirlg",   /* day #47 */
+  "izz30y", "48qskz", "g0acxc", "tubx9n", "nbcxk9",   /* day #48 */
+  "g0e7ry", "efolrw", "qs6q5k", "ni4l0j", "5k28ss",   /* day #49 */
+  "n1vjnk", "bntwmn", "ub6ibx", "ws9uj7", "n0x4pn",   /* day #50 */
+  "9f29fp", "mhzxc2", "t3b44j", "6c73mo", "jv8t0h",   /* day #51 */
+  "wc3aly", "huljuv", "ewtcln", "8qj1pg", "dejdqb",   /* day #52 */
+  "1grux7", "18lw6f", "f570ia", "bb0mgz", "xwmy7n",   /* day #53 */
+  "to6msu", "wpdr1x", "yd1sfy", "nh9bgb", "37w5gg",   /* day #54 */
+  "mhzxc2", "1mmwdr", "6ta84j", "8qj1pg", "6i43tu",   /* day #55 */
+  "1grux7", "izz30y", "3lctt7", "6bgjow", "imath4",   /* day #56 */
+  "s5pf92", "svhcy2", "1mmwdr", "vi3af0", "c8687d",   /* day #57 */
+  "j9h1ym", "g16v2u", "f9l9e3", "tubx9n", "t4ynjd",   /* day #58 */
+  "0n1g9b", "upmtdd", "pssd6e", "pboake", "1mmwdr",   /* day #59 */
+  "mtkori", "s5r5vw", "gfyu02", "4y8oio", "5gi2kn",   /* day #60 */
+  "1srq2t", "ky4qzv", "cukzlq", "fwnu5u", "ma7p3b",   /* day #61 */
+  "64vk17", "ntcvg6", "y8n9cr", "izz30y", "f9l9e3",   /* day #62 */
+  "c8687d", "s07h6d", "fwnu5u", "6i43tu", "8pfsz3",   /* day #63 */
+  "cukzlq", "js2lml", "zatyx6", "pl4lfx", "fwnu5u",   /* day #64 */
+  "tubx9n", "fwnu5u", "bb0mgz", "cukzlq", "n0x4pn",   /* day #65 */
+  "bb0mgz", "fwnu5u", "f570ia", "xdf1ar", "ckrr17",   /* day #66 */
+  "abenow", "166c5u", "5hinj1", "gfyu02", "svhcy2",   /* day #67 */
+  "cbqn1a", "shdrz5", "r5elv2", "to6msu", "04bwqy",   /* day #68 */
+  "096h6n", "rlidtd", "pj9x2r", "uo7v06", "0funpq",   /* day #69 */
+  "166c5u", "h45kbc", "947rhq", "n0x4pn", "vhpzne",   /* day #70 */
+  "y3znap", "pvfz3f", "zqekm7", "i0zdz5", "ws9uj7",   /* day #71 */
+  "nbcxk9", "3pdku2", "h45kbc", "xju43w", "e4uygr",   /* day #72 */
+  "3rgr31", "14owyr", "r1zgy6", "jwmgj3", "y8n9cr",   /* day #73 */
+  "ws9uj7", "gtb769", "vdq6d8", "drikcz", "1wsxa0",   /* day #74 */
+  "bntwmn", "jjkcre", "qystfb", "85qcy7", "67kwfc",   /* day #75 */
+  "pj9x2r", "fkx9w4", "3pmdft", "5macq2", "t5uw25",   /* day #76 */
+  "pl6emp", "43ij1b", "chbtas", "07kd7x", "pssd6e",   /* day #77 */
+  "8kr5wu", "qs6q5k", "ugmg6f", "9pcozp", "pvfz3f",   /* day #78 */
+  "gw9kx9", "vhpzne", "g26pcj", "pvfz3f", "lmmsf6",   /* day #79 */
+  "10nx5s", "43ij1b", "j9h1ym", "abenow", "to6msu",   /* day #80 */
+  "mhzxc2", "6ta84j", "kgirlg", "8puez4", "b5upee",   /* day #81 */
+  "xju43w", "zqekm7", "6lsm9l", "8pfsz3", "ahf2in",   /* day #82 */
+  "95uda0", "s07h6d", "43ij1b", "7gahid", "166c5u",   /* day #83 */
+  "rxfc07", "c6wmlg", "zqekm7", "ssx35q", "4xsfyq",   /* day #84 */
+  "kbskcr", "lmmsf6", "y8n9cr", "e4uygr", "96tezj",   /* day #85 */
+  "cbqn1a", "3pmdft", "bb0mgz", "iv02aa", "efolrw",   /* day #86 */
+  "vk7y0n", "vi3af0", "ma7p3b", "ewtcln", "294epm",   /* day #87 */
+  "vdq6d8", "9f29fp", "p1xd86", "4nfaf1", "o8pvxe",   /* day #88 */
+  "48qskz", "ahf2in", "uo7v06", "hvygrp", "tubx9n",   /* day #89 */
+  "r1o7pe", "1grux7", "08zjry", "06ae6k", "iw73po",   /* day #90 */
+  "chbtas", "xdf1ar", "0l9izq", "1srq2t", "d3a1vm",   /* day #91 */
+  "wc3aly", "t4ynjd", "04bwqy", "nbcxk9", "1srq2t",   /* day #92 */
+  "4y8oio", "ovsd6p", "t9q6y1", "chbtas", "294epm",   /* day #93 */
+  "pssd6e", "294epm", "fd6w65", "ghticr", "00kusm",   /* day #94 */
+  "tubx9n", "eilvx3", "73dyg2", "0funpq", "4nfaf1",   /* day #95 */
+  "6bgjow", "64vk17", "j6wi6e", "mytxax", "mtkori",   /* day #96 */
+  "vi3af0", "c8687d", "3pmdft", "crdwqm", "uo7v06",   /* day #97 */
+  "zatyx6", "me7h30", "nrnc1w", "ky4qzv", "2el7yi",   /* day #98 */
+  "abenow", "cutx6y", "ssx35q", "vettqp", "crdwqm",   /* day #99 */
+  "ssx35q", "9jilv2", "6ta84j", "1wsxa0", "macqzx",   /* day #100 */
+  "z8qy0m", "zqekm7", "1nwnvl", "51yv18", "upmtdd",   /* day #101 */
+  "67kwfc", "1srq2t", "096h6n", "6lsm9l", "gnqmwt",   /* day #102 */
+  "j1aoex", "nh9bgb", "6i43tu", "ugmg6f", "294epm",   /* day #103 */
+  "1srq2t", "cukzlq", "j6wi6e", "7gm5dq", "ub6ibx",   /* day #104 */
+  "bb0mgz", "ghticr", "r5elv2", "10nx5s", "izz30y",   /* day #105 */
+  "166c5u", "t5uw25", "upmtdd", "ky4qzv", "tsoivc",   /* day #106 */
+  "ph23p6", "iv02aa", "xju43w", "bci370", "ma7p3b",   /* day #107 */
+  "fd6w65", "bb0mgz", "3pmdft", "j9h1ym", "qvtart",   /* day #108 */
+  "pboake", "nh9bgb", "fd6w65", "8puez4", "7gm5dq",   /* day #109 */
+  "4nfaf1", "ssx35q", "crdwqm", "vhpzne", "drikcz",   /* day #110 */
+  "o8pvxe", "mhzxc2", "kbskcr", "8pfsz3", "z8qy0m",   /* day #111 */
+  "ntcvg6", "evvw4t", "xwmy7n", "i0zdz5", "bntwmn",   /* day #112 */
+  "98kjo0", "nq0bup", "95uda0", "4y8oio", "vi3af0",   /* day #113 */
+  "ux0j97", "qs6q5k", "g3us58", "mtkori", "igyqta",   /* day #114 */
+  "3rgr31", "pssd6e", "t3b44j", "vk7y0n", "fd6w65",   /* day #115 */
+  "7gahid", "xwmy7n", "947rhq", "i0zdz5", "zf1b2a",   /* day #116 */
+  "hfdtmy", "ni4l0j", "3lctt7", "06ae6k", "3rgr31",   /* day #117 */
+  "fzb5ly", "s5r5vw", "jk4z91", "7q22u2", "o8pvxe",   /* day #118 */
+  "hqei7d", "6bgjow", "cukzlq", "exmzfu", "ni4l0j",   /* day #119 */
+  "ovsd6p", "hfdtmy", "hqei7d", "7gahid", "37w5gg",   /* day #120 */
+  "bb0mgz", "to6msu", "8sxen2", "gfyu02", "5k28ss",   /* day #121 */
+  "10nx5s", "9jilv2", "8puez4", "t5uw25", "cgiu1u",   /* day #122 */
+  "bu22an", "8puez4", "e4uygr", "bntwmn", "izz30y",   /* day #123 */
+  "64vk17", "1q4gfj", "exmzfu", "s07h6d", "7gahid",   /* day #124 */
+  "mtkori", "3pmdft", "ovsd6p", "4nfaf1", "8qj1pg",   /* day #125 */
+  "mhzxc2", "gw9kx9", "c8687d", "166c5u", "gxtxno",   /* day #126 */
+  "drikcz", "g26pcj", "pl4lfx", "y3znap", "dg8e0o",   /* day #127 */
+  "ph23p6", "64vk17", "2qgzk7", "vhpzne", "vk7y0n",   /* day #128 */
+  "crdwqm", "n1vjnk", "dg8e0o", "zqekm7", "igyqta",   /* day #129 */
+  "xwmy7n", "n1vjnk", "6ta84j", "h45kbc", "294epm",   /* day #130 */
+  "ssx35q", "h45kbc", "g0e7ry", "f570ia", "d3a1vm",   /* day #131 */
+  "qhvkta", "jk4z91", "drikcz", "s07h6d", "947rhq",   /* day #132 */
+  "bntwmn", "igyqta", "mhzxc2", "cukzlq", "s5r5vw",   /* day #133 */
+  "chbtas", "xdf1ar", "ovsd6p", "qvtart", "ay1jmt",   /* day #134 */
+  "xyhtjc", "1mmwdr", "t5uw25", "zf1b2a", "ahf2in",   /* day #135 */
+  "gtb769", "ewtcln", "i0zdz5", "xdf1ar", "t3b44j",   /* day #136 */
+  "huljuv", "oy3uk7", "hhl6tf", "8puez4", "me7h30",   /* day #137 */
+  "1grux7", "67kwfc", "ovsd6p", "g3us58", "c6wmlg",   /* day #138 */
+  "j1aoex", "mytxax", "7gahid", "zatyx6", "ap3rlx",   /* day #139 */
+  "js2lml", "4nfaf1", "6lsm9l", "8qj1pg", "mytxax",   /* day #140 */
+  "evvw4t", "e4uygr", "bt20k9", "lmmsf6", "cz2f52",   /* day #141 */
+  "8kr5wu", "ap3rlx", "yedqn8", "8pfsz3", "096h6n",   /* day #142 */
+  "efolrw", "1sf2p8", "wc3aly", "ecltvj", "bci370",   /* day #143 */
+  "lmmsf6", "huljuv", "qyatwk", "upmtdd", "d3a1vm",   /* day #144 */
+  "ma7p3b", "g0e7ry", "hqei7d", "rxfc07", "vi3af0",   /* day #145 */
+  "r5elv2", "rxfc07", "07kd7x", "096h6n", "1grux7",   /* day #146 */
+  "e4uygr", "ghticr", "i3vuqs", "pl6emp", "s5pf92",   /* day #147 */
+  "y3znap", "10nx5s", "1sf2p8", "oy3uk7", "3lctt7",   /* day #148 */
+  "oto802", "gxtxno", "43ij1b", "orftqu", "9jilv2",   /* day #149 */
+  "zatyx6", "hfdtmy", "3lctt7", "10nx5s", "9jilv2",   /* day #150 */
+  "3pmdft", "pl6emp", "wg439y", "166c5u", "5hinj1",   /* day #151 */
+  "exmzfu", "gnqmwt", "e4uygr", "pssd6e", "g0acxc",   /* day #152 */
+  "bu22an", "6lsm9l", "gfyu02", "tsoivc", "z8qy0m",   /* day #153 */
+  "ahf2in", "efolrw", "3pmdft", "96tezj", "r1o7pe",   /* day #154 */
+  "07kd7x", "mytxax", "3lctt7", "bu22an", "ub6ibx",   /* day #155 */
+  "0l9izq", "8sxen2", "pboake", "xwmy7n", "1srq2t",   /* day #156 */
+  "g26pcj", "06ae6k", "fd6w65", "1wsxa0", "bci370",   /* day #157 */
+  "igyqta", "huljuv", "vi3af0", "bb0mgz", "vk7y0n",   /* day #158 */
+  "ky4qzv", "g0e7ry", "pl4lfx", "xyhtjc", "73dyg2",   /* day #159 */
+  "j5fthr", "e4uygr", "dg8e0o", "pxiqjv", "vhn11f",   /* day #160 */
+  "8puez4", "v3k6g3", "c8687d", "wc3aly", "96tezj",   /* day #161 */
+  "wc3aly", "i0zdz5", "ntcvg6", "0l9izq", "hhl6tf",   /* day #162 */
+  "s9bxfo", "y8n9cr", "x7cfzy", "ewtcln", "hqei7d",   /* day #163 */
+  "oy3uk7", "igyqta", "tsoivc", "j1aoex", "orftqu",   /* day #164 */
+  "cutx6y", "evvw4t", "zatyx6", "gtb769", "jjkcre",   /* day #165 */
+  "nq0bup", "8pfsz3", "yd1sfy", "nbcxk9", "tv05ii",   /* day #166 */
+  "vk7y0n", "pboake", "zf1b2a", "dg8e0o", "fzb5ly",   /* day #167 */
+  "1grux7", "hjksut", "y3znap", "js2lml", "crdwqm",   /* day #168 */
+  "vhn11f", "bu22an", "cox683", "c6wmlg", "d5w7je",   /* day #169 */
+  "qs6q5k", "iw73po", "cutx6y", "evvw4t", "6ta84j",   /* day #170 */
+  "ckrr17", "vmtgks", "2el7yi", "cutx6y", "gxtxno",   /* day #171 */
+  "2qgzk7", "pxiqjv", "vi3af0", "dejdqb", "ckrr17",   /* day #172 */
+  "j9h1ym", "947rhq", "rxfc07", "uo7v06", "7q22u2",   /* day #173 */
+  "vettqp", "8sxen2", "jlgn61", "p1xd86", "rxfc07",   /* day #174 */
+  "qs6q5k", "jjkcre", "3pdku2", "cbqn1a", "mtkori",   /* day #175 */
+  "j5fthr", "pl6emp", "chbtas", "pssd6e", "js2lml",   /* day #176 */
+  "3rgr31", "ssx35q", "8qj1pg", "gw9kx9", "8pfsz3",   /* day #177 */
+  "10nx5s", "bb0mgz", "o8pvxe", "c6wmlg", "fkx9w4",   /* day #178 */
+  "43ij1b", "crdwqm", "r1zgy6", "rlidtd", "gtb769",   /* day #179 */
+  "8sxen2", "ydbonh", "3pdku2", "yedqn8", "jlgn61",   /* day #180 */
+  "exmzfu", "n0x4pn", "wpdr1x", "vk7y0n", "73dyg2",   /* day #181 */
+  /* SCHEDULE:END */
+];
+
 /* ---------------- date / day number ---------------- */
 var LAUNCH_UTC = Date.UTC(2026,9,8); /* 8 Oct 2026 = puzzle #1 */
 var MS_DAY = 86400000;
@@ -380,7 +573,29 @@ function mulberry32(a){
 }
 function seedFor(mi){ return (((mi + 1000000) * 2654435761) >>> 0); }
 
-function dailyQuestions(mi){
+/* Stable identity for a question: FNV-1a over its normalised text, rendered
+   as six base-36 chars. The frozen schedule stores these rather than array
+   positions, so re-sorting or editing the bank cannot repoint a day. */
+function qid(text){
+  var s = String(text).toLowerCase().replace(/[^a-z0-9]/g, "");
+  var h = 2166136261;
+  for (var i = 0; i < s.length; i++){
+    h ^= s.charCodeAt(i);
+    h = Math.imul(h, 16777619) >>> 0;
+  }
+  var out = (h % 2176782336).toString(36);
+  while (out.length < 6) out = "0" + out;
+  return out;
+}
+var QID_MAP = (function(){
+  var m = {};
+  for (var i = 0; i < QUESTIONS.length; i++) m[qid(QUESTIONS[i].q)] = QUESTIONS[i];
+  return m;
+})();
+
+/* Fallback: deterministic shuffle of the live bank. Used only for days the
+   frozen schedule does not cover yet. */
+function computedDaily(mi){
   var rng = mulberry32(seedFor(mi));
   var idx = QUESTIONS.map(function(_,i){ return i; });
   for (var i = idx.length - 1; i > 0; i--){
@@ -388,6 +603,26 @@ function dailyQuestions(mi){
     var t = idx[i]; idx[i] = idx[j]; idx[j] = t;
   }
   return idx.slice(0, 5).map(function(i){ return QUESTIONS[i]; });
+}
+
+/* Frozen day. Returns null if the day is not scheduled, or if any id in it no
+   longer resolves - so a bad state degrades to the fallback instead of
+   breaking the day outright. */
+function scheduledDaily(mi){
+  if (mi < 0) return null;
+  var base = mi * 5;
+  if (base + 5 > SCHEDULE.length) return null;
+  var out = [];
+  for (var k = 0; k < 5; k++){
+    var q = QID_MAP[SCHEDULE[base + k]];
+    if (!q) return null;
+    out.push(q);
+  }
+  return out;
+}
+
+function dailyQuestions(mi){
+  return scheduledDaily(mi) || computedDaily(mi);
 }
 
 /* ---------------- scoring ---------------- */
@@ -675,6 +910,33 @@ function runSelfTest(){
     else seenQ[key] = i;
   });
   ok(dupes.length === 0, "duplicate questions: " + dupes.join(", "));
+
+  /* frozen-schedule integrity */
+  ok(SCHEDULE.length % 5 === 0, "schedule length is not a multiple of 5");
+  var orphans = 0, dupDays = 0;
+  for (var si = 0; si < SCHEDULE.length; si++){
+    if (!QID_MAP[SCHEDULE[si]]) orphans++;
+  }
+  ok(orphans === 0, "schedule references " + orphans + " unknown question id(s)");
+  for (var dnum = 0; dnum * 5 + 5 <= SCHEDULE.length; dnum++){
+    var onDay = {}, repeat = false;
+    for (var dk = 0; dk < 5; dk++){
+      var did = SCHEDULE[dnum * 5 + dk];
+      if (onDay[did]) repeat = true;
+      onDay[did] = 1;
+    }
+    if (repeat) dupDays++;
+  }
+  ok(dupDays === 0, dupDays + " scheduled day(s) contain a duplicate");
+
+  /* a frozen day must resolve to exactly what the schedule records */
+  if (SCHEDULE.length >= 5){
+    var frozen0 = dailyQuestions(0);
+    ok(frozen0.length === 5, "day 0 did not resolve to 5 questions");
+    for (var fk = 0; fk < 5; fk++){
+      ok(qid(frozen0[fk].q) === SCHEDULE[fk], "day 0 diverges from the frozen schedule");
+    }
+  }
 
   var d3a = dailyQuestions(3), d3b = dailyQuestions(3), d4 = dailyQuestions(4);
   ok(d3a.length === 5, "daily length != 5");

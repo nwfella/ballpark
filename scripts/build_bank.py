@@ -12,10 +12,80 @@ Usage:  python scripts/build_bank.py
 import os
 import re
 import sys
+from datetime import date
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(HERE)
 HTML = os.path.join(ROOT, "index.html")
+
+SCHED_START = "/* SCHEDULE:START */"
+SCHED_END = "/* SCHEDULE:END */"
+LAUNCH = date(2026, 10, 8)     # must match LAUNCH_UTC in the game
+HORIZON_DAYS = 180             # keep the schedule this far ahead of today
+
+_MASK = 0xFFFFFFFF
+
+
+def _u32(x):
+    return x & _MASK
+
+
+def _i32(x):
+    x &= _MASK
+    return x - 0x100000000 if x >= 0x80000000 else x
+
+
+def _imul(a, b):
+    return _i32((_u32(a) * _u32(b)) & _MASK)
+
+
+def _mulberry32(seed):
+    a = _i32(seed)
+
+    def nxt():
+        nonlocal a
+        a = _i32(a + 0x6D2B79F5)
+        t = _imul(_i32(a) ^ (_u32(a) >> 15), _i32(1 | a))
+        t = _i32(_i32(t + _imul(_i32(t) ^ (_u32(t) >> 7), _i32(61 | t))) ^ t)
+        return _u32(_i32(t) ^ (_u32(t) >> 14)) / 4294967296
+
+    return nxt
+
+
+def _seed_for(mi):
+    return _u32((mi + 1000000) * 2654435761)
+
+
+def pick_day(bank_size, mi, take=5):
+    """Bank indices for a day, in file order - identical to the game's shuffle."""
+    rng = _mulberry32(_seed_for(mi))
+    idx = list(range(bank_size))
+    for i in range(bank_size - 1, 0, -1):
+        j = int(rng() * (i + 1))
+        idx[i], idx[j] = idx[j], idx[i]
+    return idx[:take]
+
+
+_B36 = "0123456789abcdefghijklmnopqrstuvwxyz"
+
+
+def qid(text):
+    """FNV-1a over normalised text -> six base-36 chars.
+
+    MUST stay byte-for-byte identical to qid() in the game, or every frozen
+    day silently orphans.
+    """
+    s = re.sub(r"[^a-z0-9]", "", text.lower())
+    h = 2166136261
+    for ch in s:
+        h ^= ord(ch)
+        h = (h * 16777619) & _MASK
+    n = h % (36 ** 6)
+    out = ""
+    while n:
+        n, r = divmod(n, 36)
+        out = _B36[r] + out
+    return (out or "0").rjust(6, "0")
 
 sys.path.insert(0, HERE)
 from questions_new import NEW  # noqa: E402
@@ -131,6 +201,8 @@ def main():
     with open(HTML, encoding="utf-8") as fh:
         src = fh.read()
 
+    nl = "\r\n" if "\r\n" in src else "\n"
+
     inserted = False
     if START not in src:
         k = src.index("var QUESTIONS = [")
@@ -149,6 +221,29 @@ def main():
         c, q, u, a, mn, mx, n = m.groups()
         existing.append({"c": c, "q": q, "u": u, "a": float(a),
                          "min": float(mn), "max": float(mx), "n": n})
+
+    # ---- freeze the schedule BEFORE the bank changes --------------------
+    # Each day is frozen against the bank exactly as it is right now, so any
+    # day that could already have been played keeps the questions it had.
+    sched = []
+    if SCHED_START in src:
+        sblk = src[src.index(SCHED_START) + len(SCHED_START):src.index(SCHED_END)]
+        sched = re.findall(r'"([0-9a-z]{6})"', sblk)
+
+    today_index = (date.today() - LAUNCH).days
+    target_last = today_index + HORIZON_DAYS
+    new_days = 0
+    for d in range(len(sched) // 5, target_last + 1):
+        for i in pick_day(len(existing), d):
+            sched.append(qid(existing[i]["q"]))
+        new_days += 1
+
+    # a frozen day must never point at a question we are about to drop
+    orphan_drops = [q for q in DROP if qid(q) in set(sched)]
+    if orphan_drops:
+        raise SystemExit(
+            "refusing to drop questions that are frozen in the schedule "
+            "(this would orphan a day): " + "; ".join(orphan_drops))
 
     seen = {norm(e["q"]) for e in existing}
     merged = list(existing)
@@ -184,7 +279,19 @@ def main():
     ]
     lines[-1] = lines[-1].rstrip(",")
 
-    out = src[:start] + "\n" + "\n".join(lines) + "\n  " + src[end:]
+    out = src[:start] + nl + nl.join(lines) + nl + "  " + src[end:]
+
+    # write the frozen schedule
+    if SCHED_START in out:
+        slines = []
+        for d in range(len(sched) // 5):
+            five = ", ".join('"%s"' % s for s in sched[d * 5:(d + 1) * 5])
+            slines.append("  %s,   /* day #%d */" % (five, d + 1))
+        sblock = nl + nl.join(slines) + nl + "  "
+        ss = out.index(SCHED_START) + len(SCHED_START)
+        se = out.index(SCHED_END)
+        out = out[:ss] + sblock + out[se:]
+
     with open(HTML, "w", encoding="utf-8") as fh:
         fh.write(out)
 
@@ -195,6 +302,9 @@ def main():
     print("duplicates skipped        : %d" % len(skipped))
     print("TOTAL bank                : %d  ->  %d-day rotation"
           % (len(merged), len(merged) // 5))
+    print("today day index           : %d" % today_index)
+    print("schedule days frozen      : %d  (+%d this run, horizon %d)"
+          % (len(sched) // 5, new_days, HORIZON_DAYS))
     if skipped:
         print("skipped:", "; ".join(skipped[:8]))
 
