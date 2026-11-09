@@ -257,11 +257,14 @@ var QUESTIONS = [
   {c:"History", q:"In what year did the US Civil War end?", u:"year", a:1865, min:1700, max:1950, n:"1865."},
   {c:"History", q:"In what year did the Wright brothers first fly?", u:"year", a:1903, min:1800, max:2000, n:"1903, at Kitty Hawk."},
   {c:"History", q:"In what year was the Battle of Hastings?", u:"year", a:1066, min:900, max:1400, n:"1066."},
+  {c:"History", q:"In what year was the Battle of Waterloo?", u:"year", a:1815, min:1700, max:1900, n:"1815."},
   {c:"History", q:"In what year was the Berlin Wall built?", u:"year", a:1961, min:1800, max:2000, n:"1961."},
   {c:"History", q:"In what year was the Chernobyl disaster?", u:"year", a:1986, min:1900, max:2000, n:"1986, in Soviet Ukraine."},
+  {c:"History", q:"In what year was the Great Fire of London?", u:"year", a:1666, min:1500, max:1800, n:"1666."},
   {c:"History", q:"In what year was the Magna Carta sealed?", u:"year", a:1215, min:1000, max:1500, n:"1215."},
   {c:"History", q:"In what year was the Statue of Liberty dedicated?", u:"year", a:1886, min:1700, max:1990, n:"1886."},
   {c:"History", q:"In what year was the US Declaration of Independence signed?", u:"year", a:1776, min:1600, max:1900, n:"1776."},
+  {c:"History", q:"In what year was the Wall Street Crash?", u:"year", a:1929, min:1800, max:2000, n:"1929."},
   {c:"History", q:"In what year was the first iPhone released?", u:"year", a:2007, min:1950, max:2020, n:"2007, by Apple."},
   {c:"History", q:"In what year were the first modern Olympic Games held?", u:"year", a:1896, min:1800, max:2000, n:"1896, in Athens."},
   {c:"Human body", q:"How many baby teeth does a typical child have?", u:"teeth", a:20, min:0, max:50, n:"Twenty primary teeth."},
@@ -340,8 +343,10 @@ var QUESTIONS = [
   {c:"Science", q:"What is the atomic number of hydrogen?", u:"atomic number", a:1, min:0, max:20, n:"One."},
   {c:"Science", q:"What is the atomic number of oxygen?", u:"atomic number", a:8, min:0, max:30, n:"Eight."},
   {c:"Science", q:"What is the boiling point of water at sea level, in Celsius?", u:"degrees C", a:100, min:0, max:300, n:"100 C at standard pressure."},
+  {c:"Science", q:"What is the freezing point of water on the kelvin scale?", u:"kelvin", a:273, min:0, max:600, n:"273.15 K."},
   {c:"Science", q:"What is the freezing point of water, in Fahrenheit?", u:"degrees F", a:32, min:0, max:150, n:"32 F, which is 0 C."},
   {c:"Science", q:"What is the speed of light in km per second?", u:"km/s", a:299792, min:0, max:600000, n:"299,792 km/s in a vacuum."},
+  {c:"Science", q:"What is the speed of sound in air, in metres per second?", u:"m/s", a:343, min:0, max:1000, n:"About 343 m/s at 20 C."},
   {c:"Space", q:"How many Apollo missions landed people on the Moon?", u:"missions", a:6, min:0, max:20, n:"Six."},
   {c:"Space", q:"How many Saturn moons are confirmed (as of 2023)?", u:"moons", a:146, min:0, max:300, n:"146 confirmed as of 2023."},
   {c:"Space", q:"How many constellations are officially recognised?", u:"constellations", a:88, min:0, max:200, n:"88, defined by the IAU."},
@@ -602,6 +607,28 @@ var SCHEDULE = [
   "6oo26q", "o8pvxe", "ap3rlx", "947rhq", "hvygrp",   /* day #188 */
   "my6gut", "nbcxk9", "crmecl", "vbh7j8", "gz00bz",   /* day #189 */
   "1q4gfj", "1mmwdr", "aufp7p", "1jaiam", "zqekm7",   /* day #190 */
+  "macqzx", "8puez4", "ugmg6f", "svhcy2", "b9je86",   /* day #191 */
+  "cbqn1a", "s9bxfo", "gnqmwt", "2t47mn", "cutx6y",   /* day #192 */
+  "c6wmlg", "vi3af0", "8kr5wu", "96tezj", "pboake",   /* day #193 */
+  "tx55zi", "4y8oio", "8puez4", "aufp7p", "pxiqjv",   /* day #194 */
+  "ub6ibx", "x7cfzy", "crmecl", "3lctt7", "r1o7pe",   /* day #195 */
+  "retorv", "f9l9e3", "6c73mo", "3pdku2", "drikcz",   /* day #196 */
+  "s5pf92", "gw9kx9", "qhvkta", "ydbonh", "wgq65g",   /* day #197 */
+  "prmkx7", "318hv1", "ydbonh", "vhn11f", "b5upee",   /* day #198 */
+  "4nfaf1", "zatyx6", "hvrs93", "7gahid", "9jilv2",   /* day #199 */
+  "ay1jmt", "7gahid", "37w5gg", "nh9bgb", "1wsxa0",   /* day #200 */
+  "iw73po", "evvw4t", "06ae6k", "ma7p3b", "1wsxa0",   /* day #201 */
+  "s3d8r7", "safsgf", "wpdr1x", "k7ntr6", "exmzfu",   /* day #202 */
+  "1mmwdr", "gz00bz", "o8pvxe", "8pfsz3", "8puez4",   /* day #203 */
+  "fkx9w4", "lmmsf6", "nbcxk9", "cber3g", "imath4",   /* day #204 */
+  "vk7y0n", "wpdr1x", "v3k6g3", "3lctt7", "294epm",   /* day #205 */
+  "lf0lor", "b5upee", "0l9izq", "9f29fp", "khg1w3",   /* day #206 */
+  "ni4l0j", "85qcy7", "45vk4e", "10nx5s", "vk7y0n",   /* day #207 */
+  "khg1w3", "pahsod", "956r85", "hvrs93", "d1zt0r",   /* day #208 */
+  "crdwqm", "wlm9he", "svhcy2", "b5upee", "37w5gg",   /* day #209 */
+  "nq0bup", "hfdtmy", "i3vuqs", "kbskcr", "aufp7p",   /* day #210 */
+  "mtkori", "ws9uj7", "kgirlg", "gnqmwt", "crmecl",   /* day #211 */
+  "g3us58", "c8687d", "me7h30", "6i43tu", "exmzfu",   /* day #212 */
   /* SCHEDULE:END */
 ];
 
